@@ -1,0 +1,36 @@
+{
+  "name": "gemini-vertex-backend",
+  "env": {
+    "BACKEND_SECRET": {
+      "description": "Required. Must match X-Proxy-Secret header sent by your frontend.",
+      "generator": "secret"
+    },
+    "VERTEX_LOCATION": { "value": "europe-west4", "required": false },
+    "GEMINI_MODEL_ID": { "value": "gemini-3-pro", "required": false },
+    "GEMINI_LOCATION": { "value": "europe-west4", "required": false },
+
+    "GEMINI25_MODEL_ID": { "value": "gemini-2.5-pro" },
+    "GEMINI25_LOCATION": { "value": "europe-west1" },
+
+    "CLAUDE_LOCATION": { "value": "europe-west1", "required": false },
+    "CLAUDE_PUBLISHER": { "value": "anthropic", "required": false },
+    "CLAUDE_MODEL_ID_SONNET": { "value": "claude-sonnet-4-5@20250929", "required": false },
+    "CLAUDE_MODEL_ID_HAIKU": { "value": "claude-haiku-4-5@20251001", "required": false }
+  },
+  "options": {
+    "allow-unauthenticated": true,
+    "memory": "512Mi",
+    "cpu": "1",
+    "concurrency": 80,
+    "max-instances": 20
+  },
+  "hooks": {
+    "postcreate": {
+      "commands": [
+        "echo \"SERVICE_URL=$SERVICE_URL\"",
+        "echo \"BACKEND_SECRET=$BACKEND_SECRET\"",
+        "echo \"Paste SERVICE_URL into vertex_backend_url and BACKEND_SECRET into vertex_backend_secret in your frontend.\""
+      ]
+    }
+  }
+}
