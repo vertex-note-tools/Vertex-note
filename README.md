@@ -5,9 +5,14 @@ This deploys a Cloud Run service that your frontend calls with:
 - POST JSON: `{ transcription, customPrompt, provider:"gemini", modelVariant:"g25" }`
 - Response: `{ note: "..." }`
 
-## 1-click deploy
+## Deploy (EU default: europe-west4)
 
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/vertex-note-tools/Vertex-note&revision=main)
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/vertex-note-tools/Vertex-note.git&cloudshell_tutorial=tutorial.md&cloudshell_workspace=.&show=terminal)
+
+### What you’ll get
+- `SERVICE_URL` (Cloud Run URL)
+- `BACKEND_SECRET` (your personal secret; paste into the frontend as `X-Proxy-Secret`)
+
 
 
 ## After deploy
