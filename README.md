@@ -7,7 +7,7 @@ This deploys a Cloud Run service that your frontend calls with:
 
 ## 1-click deploy
 
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/Scottyboa/gemini-vertex-backend&revision=main)
+[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/vertex-note-tools/Vertex-note&revision=main)
 
 
 ## After deploy
