@@ -2,8 +2,8 @@
   "name": "gemini-vertex-backend",
   "version": "1.0.0",
   "main": "index.js",
-    "scripts": {
-     start": "functions-framework --target=geminiVertexNote --port=${PORT:-8080}"
+  "scripts": {
+    "start": "functions-framework --target=geminiVertexNote --port=${PORT:-8080}"
   },
   "engines": {
     "node": ">=20"
