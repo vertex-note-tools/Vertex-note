@@ -3,7 +3,8 @@
   "env": {
     "BACKEND_SECRET": {
       "description": "Shared secret. Your frontend must send it in the X-Proxy-Secret header.",
-      "generator": "secret"
+      "generator": "secret",
+      "order": 10
     }
   },
   "options": {
@@ -14,29 +15,15 @@
     "concurrency": 80,
     "max-instances": 20
   },
-  "build": {
-    "skip": true
-  },
   "hooks": {
-    "prebuild": {
+    "precreate": {
       "commands": [
-        "set -euo pipefail",
-        "echo 'Enabling required APIs (Cloud Run, Cloud Build, Artifact Registry, Vertex AI)...'",
-        "gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com aiplatform.googleapis.com --project \"$GOOGLE_CLOUD_PROJECT\"",
-        "echo 'Ensuring Cloud Build can push to Artifact Registry (best-effort)...'",
-        "gcloud projects add-iam-policy-binding \"$GOOGLE_CLOUD_PROJECT\" --member=\"serviceAccount:${GOOGLE_CLOUD_PROJECT}@cloudbuild.gserviceaccount.com\" --role=\"roles/artifactregistry.writer\" --quiet || true",
-        "echo \"Building container image with Cloud Build: $IMAGE_URL\"",
-        "gcloud builds submit \"$APP_DIR\" --tag \"$IMAGE_URL\" --project \"$GOOGLE_CLOUD_PROJECT\""
+        "bash scripts/precreate.sh"
       ]
     },
     "postcreate": {
       "commands": [
-        "echo ''",
-        "echo '✅ Deploy complete'",
-        "echo \"SERVICE_URL=$SERVICE_URL\"",
-        "echo \"BACKEND_SECRET=$BACKEND_SECRET\"",
-        "echo ''",
-        "echo 'Copy SERVICE_URL into vertex_backend_url and BACKEND_SECRET into vertex_backend_secret in your frontend.'"
+        "bash scripts/postcreate.sh"
       ]
     }
   }
