@@ -7,7 +7,7 @@ This deploys a Cloud Run service that your frontend calls with:
 
 ## Deploy (EU default: europe-west4)
 
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/vertex-note-tools/Vertex-note.git&cloudshell_git_branch=main&cloudshell_tutorial=tutorial.md&cloudshell_workspace=.&show=terminal&ephemeral=true)
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/vertex-note-tools/Vertex-note.git&cloudshell_git_branch=main&cloudshell_workspace=.&show=terminal&ephemeral=true)
 
 ### What you’ll get
 - `SERVICE_URL` (Cloud Run URL)
