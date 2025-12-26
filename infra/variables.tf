@@ -7,6 +7,10 @@ variable "region" {
   type        = string
   description = "Cloud Run region for the backend service."
   default     = "europe-west4"
+  validation {
+    condition     = var.region == "europe-west4"
+    error_message = "This backend must be deployed in europe-west4."
+  }
 }
 
 variable "service_name" {
@@ -26,6 +30,14 @@ Replace <MAINTAINER_PROJECT_ID> and <AR_REPO_NAME> with your maintainer project/
 EOT
 
   default = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.1"
+
+  validation {
+    condition = can(regex(
+      "^europe-west4-docker\\.pkg\\.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:(.+)$",
+      var.container_image
+    ))
+    error_message = "container_image must be europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:<tag>."
+  }
 }
 
 # Gemini 2.5 Pro (primary)
@@ -39,6 +51,10 @@ variable "gemini25_location" {
   type        = string
   description = "Vertex AI location for Gemini 2.5."
   default     = "europe-west1"
+  validation {
+    condition     = contains(["europe-west1", "europe-west4"], var.gemini25_location)
+    error_message = "gemini25_location must be an EU region (europe-west1 or europe-west4)."
+  }
 }
 
 # Optional fallback (Gemini 3 / other)
