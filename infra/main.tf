@@ -67,6 +67,7 @@ resource "google_secret_manager_secret_iam_member" "runtime_secret_access" {
 resource "google_cloud_run_v2_service" "svc" {
   name     = var.service_name
   location = var.region
+  deletion_protection = false
 
   template {
     service_account = google_service_account.runtime.email
