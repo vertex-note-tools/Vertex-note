@@ -16,6 +16,11 @@
     "max-instances": 20
   },
   "hooks": {
+    "prebuild": {
+      "commands": [
+        "bash scripts/prebuild.sh"
+      ]
+    },
     "precreate": {
       "commands": [
         "bash scripts/precreate.sh"
