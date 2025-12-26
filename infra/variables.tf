@@ -25,7 +25,7 @@ Default points to a public Google Artifact Registry image (docker.pkg.dev).
 Replace <MAINTAINER_PROJECT_ID> and <AR_REPO_NAME> with your maintainer project/repo.
 EOT
 
-  default = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.0"
+  default = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.1"
 }
 
 # Gemini 2.5 Pro (primary)
