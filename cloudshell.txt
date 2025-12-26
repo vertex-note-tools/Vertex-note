@@ -1,0 +1,11 @@
+*** File: cloudshell.txt
+1) In the Cloud Shell top bar, select the project you want to deploy into (billing must already be enabled).
+   If needed: gcloud config set project YOUR_PROJECT_ID
+
+2) Deploy (EU default: europe-west4):
+   chmod +x deploy.sh
+   ./deploy.sh
+
+After deploy, copy:
+- SERVICE_URL
+- BACKEND_SECRET
