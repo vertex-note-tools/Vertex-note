@@ -2,20 +2,32 @@
   "name": "gemini-vertex-backend",
   "env": {
     "BACKEND_SECRET": {
-      "description": "Required. Must match X-Proxy-Secret header sent by your frontend.",
+      "description": "Shared secret required in the X-Proxy-Secret header from your frontend.",
       "generator": "secret"
     },
-    "VERTEX_LOCATION": { "value": "europe-west4", "required": false },
-    "GEMINI_MODEL_ID": { "value": "gemini-3-pro", "required": false },
-    "GEMINI_LOCATION": { "value": "europe-west4", "required": false },
-
-    "GEMINI25_MODEL_ID": { "value": "gemini-2.5-pro" },
-    "GEMINI25_LOCATION": { "value": "europe-west1" },
-
-    "CLAUDE_LOCATION": { "value": "europe-west1", "required": false },
-    "CLAUDE_PUBLISHER": { "value": "anthropic", "required": false },
-    "CLAUDE_MODEL_ID_SONNET": { "value": "claude-sonnet-4-5@20250929", "required": false },
-    "CLAUDE_MODEL_ID_HAIKU": { "value": "claude-haiku-4-5@20251001", "required": false }
+    "VERTEX_LOCATION": {
+      "description": "Vertex AI region for Gemini 3 (fallback paths).",
+      "value": "europe-west4",
+      "required": false
+    },
+    "GEMINI_MODEL_ID": {
+      "description": "Gemini 3 model ID (fallback).",
+      "value": "gemini-3-pro",
+      "required": false
+    },
+    "GEMINI_LOCATION": {
+      "description": "Gemini 3 region (fallback).",
+      "value": "europe-west4",
+      "required": false
+    },
+    "GEMINI25_MODEL_ID": {
+      "description": "Gemini 2.5 model ID used by the frontend option (recommended).",
+      "value": "gemini-2.5-pro"
+    },
+    "GEMINI25_LOCATION": {
+      "description": "Gemini 2.5 region (for this setup).",
+      "value": "europe-west1"
+    }
   },
   "options": {
     "allow-unauthenticated": true,
@@ -25,12 +37,15 @@
     "max-instances": 20
   },
   "hooks": {
+    "precreate": {
+      "commands": [
+        "bash scripts/precreate.sh"
+      ]
+    },
     "postcreate": {
       "commands": [
-        "echo \"SERVICE_URL=$SERVICE_URL\"",
-        "echo \"BACKEND_SECRET=$BACKEND_SECRET\"",
-        "echo \"Paste SERVICE_URL into vertex_backend_url and BACKEND_SECRET into vertex_backend_secret in your frontend.\""
+        "bash scripts/postcreate.sh"
       ]
     }
   }
-}
+ }
