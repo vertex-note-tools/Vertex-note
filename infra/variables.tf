@@ -21,11 +21,11 @@ variable "container_image" {
 Public container image reference to deploy to Cloud Run.
 This must be publicly pullable (no auth) so random users can deploy in their own GCP projects.
 
-Default points to GHCR under the owner 'vertex-note-tools' and tag 'v1.0.0'.
-If you published the image under a different owner/account, update this value.
+Default points to a public Google Artifact Registry image (docker.pkg.dev).
+Replace <MAINTAINER_PROJECT_ID> and <AR_REPO_NAME> with your maintainer project/repo.
 EOT
 
-  default = "ghcr.io/vertex-note-tools/gemini-vertex-backend:v1.0.0"
+  default = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.0"
 }
 
 # Gemini 2.5 Pro (primary)
