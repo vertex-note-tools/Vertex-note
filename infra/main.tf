@@ -33,12 +33,15 @@ resource "google_project_iam_member" "aiplatform_user" {
   project = var.project_id
   role    = "roles/aiplatform.user"
   member  = "serviceAccount:${google_service_account.runtime.email}"
+  # Avoid race: IAM binding before API is fully enabled
+  depends_on = [google_project_service.aiplatform]
 }
 
 # Generate a per-deployment secret
 resource "random_password" "backend_secret" {
   length  = 32
-  special = true
+  # Copy/paste friendly for users (header + sessionStorage)
+  special = false
 }
 
 resource "google_secret_manager_secret" "backend_secret" {
@@ -114,6 +117,7 @@ resource "google_cloud_run_v2_service" "svc" {
   depends_on = [
     google_project_service.run,
     google_project_service.aiplatform,
+    google_project_service.secretmanager,
     google_secret_manager_secret_iam_member.runtime_secret_access,
     google_project_iam_member.aiplatform_user
   ]
