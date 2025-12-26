@@ -1,11 +1,11 @@
 variable "project_id" {
   type        = string
-  description = "GCP project ID to deploy into (billing must already be enabled)."
+  description = "GCP project id where the backend will be deployed (the user's project)."
 }
 
 variable "region" {
   type        = string
-  description = "Cloud Run region."
+  description = "Cloud Run region for the backend service."
   default     = "europe-west4"
 }
 
@@ -17,32 +17,46 @@ variable "service_name" {
 
 variable "container_image" {
   type        = string
-  description = "Public container image reference for the backend."
-  # TODO: change this to your published public image (Docker Hub or public Artifact Registry).
-  default     = "docker.io/REPLACE_ME/gemini-vertex-backend:1.0.0"
+  description = <<EOT
+Public container image reference to deploy to Cloud Run.
+This must be publicly pullable (no auth) so random users can deploy in their own GCP projects.
+
+Default points to GHCR under the owner 'vertex-note-tools' and tag 'v1.0.0'.
+If you published the image under a different owner/account, update this value.
+EOT
+
+  default = "ghcr.io/vertex-note-tools/gemini-vertex-backend:v1.0.0"
 }
 
+# Gemini 2.5 Pro (primary)
 variable "gemini25_model_id" {
   type        = string
+  description = "Vertex AI model id for Gemini 2.5."
   default     = "gemini-2.5-pro"
 }
 
 variable "gemini25_location" {
   type        = string
+  description = "Vertex AI location for Gemini 2.5."
   default     = "europe-west1"
 }
 
+# Optional fallback (Gemini 3 / other)
 variable "gemini_model_id" {
   type        = string
+  description = "Fallback Vertex AI model id (optional)."
   default     = "gemini-3-pro"
 }
 
 variable "gemini_location" {
   type        = string
+  description = "Fallback Vertex AI location (optional)."
   default     = "europe-west4"
 }
 
+# Used by your backend as VERTEX_LOCATION (if it needs a default region for Vertex-related calls)
 variable "vertex_location" {
   type        = string
+  description = "Default Vertex location used by the backend (if applicable)."
   default     = "europe-west4"
 }
