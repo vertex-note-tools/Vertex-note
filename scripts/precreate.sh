@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cloud Run Button builds/pushes to Artifact Registry like:
-#   ${GOOGLE_CLOUD_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cloud-run-source-deploy/${K_SERVICE}
-REG_HOST="${GOOGLE_CLOUD_REGION}-docker.pkg.dev"
+echo "Enabling required APIs..."
+gcloud services enable \
+  run.googleapis.com \
+  artifactregistry.googleapis.com \
+  aiplatform.googleapis.com \
+  iam.googleapis.com \
+  --project "$GOOGLE_CLOUD_PROJECT" \
+  --quiet
 
-echo "Configuring Docker authentication for Artifact Registry: ${REG_HOST}"
-
-# Writes docker credential helper config so docker push can auth cleanly.
-gcloud auth configure-docker "${REG_HOST}" --quiet
-
-# Extra safety: token-based login (non-fatal if it fails).
-TOKEN="$(gcloud auth print-access-token || true)"
-if [[ -n "${TOKEN}" ]]; then
-  echo "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin "https://${REG_HOST}" >/dev/null 2>&1 || true
+# Cloud Run Button cannot auto-default region; enforce the correct one.
+if [[ "${GOOGLE_CLOUD_REGION:-}" != "europe-west4" ]]; then
+  echo ""
+  echo "❌ Wrong region selected: ${GOOGLE_CLOUD_REGION:-<empty>}"
+  echo "Please re-run deploy and select region: europe-west4"
+  exit 1
 fi
