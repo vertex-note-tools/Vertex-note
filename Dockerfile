@@ -1,12 +1,11 @@
 *** File: Dockerfile
 
-# Cloud Run container for the Functions Framework handler in index.js
 FROM node:22-slim
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 COPY . .
 
