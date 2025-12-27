@@ -1,7 +1,27 @@
 provider "google" {
   project = var.project_id
-  region  = var.region
+  region  = "europe-west4"
 }
+
+locals {
+  # Fixed deployment settings (do not expose as user inputs)
+  region       = "europe-west4"
+  service_name = "gemini-vertex-backend"
+
+  # Fixed public image (Artifact Registry, Cloud Run compatible)
+  # Update this tag when you publish a new backend image.
+  container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.1"
+
+  # Gemini 2.5 Pro (primary)
+  gemini25_model_id = "gemini-2.5-pro"
+  gemini25_location = "europe-west1"
+
+  # Optional fallback (keep if your backend reads these)
+  gemini_model_id = "gemini-3-pro"
+  gemini_location = "europe-west4"
+  vertex_location = "europe-west4"
+}
+
 
 # Enable required APIs
 resource "google_project_service" "run" {
@@ -65,41 +85,41 @@ resource "google_secret_manager_secret_iam_member" "runtime_secret_access" {
 
 # Cloud Run service (v2)
 resource "google_cloud_run_v2_service" "svc" {
-  name     = var.service_name
-  location = var.region
+  name     = local.service_name
+  location = local.region
   deletion_protection = false
 
   template {
     service_account = google_service_account.runtime.email
 
     containers {
-      image = var.container_image
+      image = local.container_image
 
       env {
         name  = "GCP_PROJECT_ID"
-        value = var.project_id
+        value = local.gemini25_model_id
       }
 
       env {
         name  = "GEMINI25_MODEL_ID"
-        value = var.gemini25_model_id
+        value = local.gemini25_model_id
       }
       env {
         name  = "GEMINI25_LOCATION"
-        value = var.gemini25_location
+        value = local.gemini25_location
       }
 
       env {
         name  = "GEMINI_MODEL_ID"
-        value = var.gemini_model_id
+        value = value = local.gemini_model_id
       }
       env {
         name  = "GEMINI_LOCATION"
-        value = var.gemini_location
+        value = local.gemini_location
       }
       env {
         name  = "VERTEX_LOCATION"
-        value = var.vertex_location
+        value = local.vertex_location
       }
 
       # BACKEND_SECRET from Secret Manager
