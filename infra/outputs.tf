@@ -10,5 +10,6 @@ output "backend_secret" {
 }
 
 output "region" {
-  value = var.region
+  description = "Cloud Run region."
+  value       = google_cloud_run_v2_service.svc.location
 }
