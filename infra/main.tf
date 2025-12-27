@@ -97,7 +97,7 @@ resource "google_cloud_run_v2_service" "svc" {
 
       env {
         name  = "GCP_PROJECT_ID"
-        value = local.gemini25_model_id
+        value = var.project_id
       }
 
       env {
@@ -111,7 +111,7 @@ resource "google_cloud_run_v2_service" "svc" {
 
       env {
         name  = "GEMINI_MODEL_ID"
-        value = value = local.gemini_model_id
+        value = local.gemini_model_id
       }
       env {
         name  = "GEMINI_LOCATION"
