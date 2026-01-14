@@ -10,7 +10,7 @@ locals {
 
   # Fixed public image (Artifact Registry, Cloud Run compatible)
   # Update this tag when you publish a new backend image.
-  container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.2"
+  container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.3"
 
   # Gemini 2.5 Pro (primary)
   gemini25_model_id = "gemini-2.5-pro"
