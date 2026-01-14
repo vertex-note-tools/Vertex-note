@@ -3,8 +3,6 @@
 // Supports:
 //   - Gemini 3 Pro        (publisher "google")
 //   - Gemini 2.5 Pro      (publisher "google", modelVariant = "g25")
-//   - Claude 4.5 Sonnet   (publisher "anthropic")
-//   - Claude 4.5 Haiku    (publisher "anthropic", modelVariant = "haiku")
 
 const functions = require("@google-cloud/functions-framework");
 const { GoogleAuth } = require("google-auth-library");
