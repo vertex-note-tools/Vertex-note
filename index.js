@@ -39,8 +39,7 @@ async function callVertexModel({
         },
       ],
       // Default max_tokens; adjust if you want longer responses.
-      max_tokens:
-        (generationConfig && generationConfig.max_tokens) || 1024,
+      max_tokens: (generationConfig && generationConfig.max_tokens) || 1024,
       stream: false,
     };
   } else {
@@ -74,17 +73,62 @@ async function callVertexModel({
       .filter((p) => p.type === "text" && typeof p.text === "string")
       .map((p) => p.text)
       .join("");
-    return text.trim();
+
+    // Claude on Vertex: usage is returned under `response.data.usage`
+    const usageRaw = response.data.usage || {};
+    const promptTokens =
+      typeof usageRaw.input_tokens === "number" ? usageRaw.input_tokens : undefined;
+    const outputTokens =
+      typeof usageRaw.output_tokens === "number" ? usageRaw.output_tokens : undefined;
+    const totalTokens =
+      typeof promptTokens === "number" && typeof outputTokens === "number"
+        ? promptTokens + outputTokens
+        : undefined;
+
+    return {
+      text: text.trim(),
+      usage: {
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        raw: usageRaw,
+      },
+    };
   } else {
     const candidates = response.data.candidates || [];
-    if (!candidates.length) return "";
+    if (!candidates.length) return { text: "", usage: undefined };
 
     const parts = candidates[0].content?.parts || [];
     const text = parts
       .map((p) => (typeof p.text === "string" ? p.text : ""))
       .join("");
 
-    return text.trim();
+    // Gemini on Vertex: usage is returned under `response.data.usageMetadata`
+    const usageRaw = response.data.usageMetadata || {};
+    const promptTokens =
+      typeof usageRaw.promptTokenCount === "number"
+        ? usageRaw.promptTokenCount
+        : undefined;
+    const outputTokens =
+      typeof usageRaw.candidatesTokenCount === "number"
+        ? usageRaw.candidatesTokenCount
+        : undefined;
+    const totalTokens =
+      typeof usageRaw.totalTokenCount === "number"
+        ? usageRaw.totalTokenCount
+        : undefined;
+
+    
+
+    return {
+      text: text.trim(),
+      usage: {
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        raw: usageRaw,
+      },
+    };
   }
 }
 
@@ -115,34 +159,25 @@ functions.http("geminiVertexNote", async (req, res) => {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
 
-  const projectId =
-    process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
+  const projectId = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
 
   // Gemini config
   const geminiLocation =
-    process.env.GEMINI_LOCATION ||
-    process.env.VERTEX_LOCATION ||
-    "europe-west4";
-  const geminiModelId =
-    process.env.GEMINI_MODEL_ID || "gemini-3-pro";
+    process.env.GEMINI_LOCATION || process.env.VERTEX_LOCATION || "europe-west4";
+  const geminiModelId = process.env.GEMINI_MODEL_ID || "gemini-3-pro";
 
   // Gemini 2.5 Pro (EU, europe-west1) – optional override
-  const gemini25Location =
-    process.env.GEMINI25_LOCATION || "europe-west1";
-  const gemini25ModelId =
-    process.env.GEMINI25_MODEL_ID || "gemini-2.5-pro";
+  const gemini25Location = process.env.GEMINI25_LOCATION || "europe-west1";
+  const gemini25ModelId = process.env.GEMINI25_MODEL_ID || "gemini-2.5-pro";
 
   // Claude config
-  const claudeLocation =
-    process.env.CLAUDE_LOCATION || "europe-west1";
-  const claudePublisher =
-    process.env.CLAUDE_PUBLISHER || "anthropic";
+  const claudeLocation = process.env.CLAUDE_LOCATION || "europe-west1";
+  const claudePublisher = process.env.CLAUDE_PUBLISHER || "anthropic";
   const claudeModelSonnet =
     process.env.CLAUDE_MODEL_ID_SONNET ||
     process.env.CLAUDE_MODEL_ID ||
     "claude-sonnet-4-5";
-  const claudeModelHaiku =
-    process.env.CLAUDE_MODEL_ID_HAIKU || "claude-haiku-4-5";
+  const claudeModelHaiku = process.env.CLAUDE_MODEL_ID_HAIKU || "claude-haiku-4-5";
   const backendSecret = process.env.BACKEND_SECRET || "";
 
   if (!projectId) {
@@ -174,17 +209,12 @@ functions.http("geminiVertexNote", async (req, res) => {
 
     // Default provider is "gemini" so old frontends keep working.
     const provider =
-      typeof providerRaw === "string"
-        ? providerRaw.toLowerCase()
-        : "gemini";
+      typeof providerRaw === "string" ? providerRaw.toLowerCase() : "gemini";
 
     const modelVariant =
-      typeof modelVariantRaw === "string"
-        ? modelVariantRaw.toLowerCase()
-        : "sonnet";
+      typeof modelVariantRaw === "string" ? modelVariantRaw.toLowerCase() : "sonnet";
 
-    const extraPrompt =
-      typeof customPrompt === "string" ? customPrompt.trim() : "";
+    const extraPrompt = typeof customPrompt === "string" ? customPrompt.trim() : "";
 
     // Match your existing formatting rules
     const baseInstruction = `
@@ -201,6 +231,7 @@ All headings should be plain text with a colon.
     let noteText = "";
     let usedModelId = "";
     let usedProvider = "";
+    let usage = undefined;
 
     if (provider === "gemini") {
       usedProvider = "gemini";
@@ -233,38 +264,54 @@ All headings should be plain text with a colon.
         };
       }
 
-
-      noteText = await callVertexModel({
+      const result = await callVertexModel({
         projectId,
         location: selectedLocation,
         publisher: "google",
         modelId: selectedModelId,
         prompt: finalPromptText,
-                generationConfig,
+        generationConfig,
       });
+      noteText = result.text;
+      usage = result.usage;
     } else if (provider === "claude") {
       usedProvider = "claude";
-      const modelId =
-        modelVariant === "haiku" ? claudeModelHaiku : claudeModelSonnet;
+      const modelId = modelVariant === "haiku" ? claudeModelHaiku : claudeModelSonnet;
       usedModelId = modelId;
 
-      noteText = await callVertexModel({
+      const result = await callVertexModel({
         projectId,
         location: claudeLocation,
         publisher: claudePublisher,
         modelId,
         prompt: finalPromptText,
       });
+      noteText = result.text;
+      usage = result.usage;
     } else {
       return res.status(400).json({
         error: `Unknown provider '${providerRaw}'. Use 'gemini' or 'claude'.`,
       });
     }
 
+    
+    if (usage && (usage.promptTokens != null || usage.outputTokens != null)) {
+      
+      console.log(
+        `[vertex tokens] provider=${usedProvider} model=${usedModelId} ` +
+          `input=${usage.promptTokens ?? "?"} output=${usage.outputTokens ?? "?"} total=${usage.totalTokens ?? "?"}`
+      );
+    } else {
+      console.log(
+        `[vertex tokens] provider=${usedProvider} model=${usedModelId} (token usage missing in response)`
+      );
+    }
+
     return res.json({
       note: noteText,
       provider: usedProvider,
       modelId: usedModelId,
+      usage,
     });
   } catch (err) {
     console.error("Error in geminiVertexNote:", err?.response?.data || err);
