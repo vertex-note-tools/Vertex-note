@@ -13,7 +13,7 @@ locals {
   # NOTE (staged rollout): keep this at v1.0.3 for the FIRST commit. After the
   # v1.0.4 image is published by the release workflow, bump this to :v1.0.4 and commit.
   # v1.0.4 adds Gemini 3.5 Flash + Gemini 3.1 Flash-Lite (EU multi-region).
-  container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.3"
+  container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.4"
 
   # Gemini 2.5 Pro (primary) – EU single-region
   gemini25_model_id = "gemini-2.5-pro"
