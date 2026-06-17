@@ -1,8 +1,16 @@
 // index.js
 // Cloud Run inline function: Notes via Vertex AI
-// Supports:
-//   - Gemini 3 Pro        (publisher "google")
-//   - Gemini 2.5 Pro      (publisher "google", modelVariant = "g25")
+// Supports (publisher "google"):
+//   - Gemini 3 Pro          (default, no/unknown modelVariant) -> gemini-3-pro
+//   - Gemini 2.5 Pro        (modelVariant = "g25")             -> gemini-2.5-pro   @ europe-west1 (EU single-region)
+//   - Gemini 3.5 Flash      (modelVariant = "g35-flash")       -> gemini-3.5-flash @ eu (EU multi-region)
+//   - Gemini 3.1 Flash-Lite (modelVariant = "g31-flash-lite")  -> gemini-3.1-flash-lite @ eu (EU multi-region, GA)
+// and Anthropic Claude (publisher "anthropic", provider = "claude").
+//
+// EU data residency: 2.5 Pro is pinned to the europe-west1 single region.
+// Gemini 3.x Flash / Flash-Lite are not offered as single-region EU endpoints yet,
+// so they use the EU multi-region endpoint ("eu" -> aiplatform.eu.rep.googleapis.com),
+// which keeps ML processing within the EU geography.
 
 const functions = require("@google-cloud/functions-framework");
 const { GoogleAuth } = require("google-auth-library");
@@ -21,12 +29,29 @@ async function callVertexModel({
   });
   const client = await auth.getClient();
 
+  // Resolve the API host from the location. Vertex AI uses THREE host schemes:
+  //   - Regional endpoint ("europe-west1"): "{location}-aiplatform.googleapis.com"
+  //   - Multi-region endpoint ("eu", "us"): "aiplatform.{location}.rep.googleapis.com"
+  //     NOT "eu-aiplatform.googleapis.com" (that host does not exist and 404s).
+  //     The request path still uses "locations/eu" | "locations/us".
+  //     These .rep. endpoints are the data-residency-guaranteed ones.
+  //   - Global endpoint ("global"): "aiplatform.googleapis.com" (no residency guarantee;
+  //     kept as a fallback if a model's EU availability ever changes).
+  let apiHost;
+  if (location === "global") {
+    apiHost = "aiplatform.googleapis.com";
+  } else if (location === "eu" || location === "us") {
+    apiHost = `aiplatform.${location}.rep.googleapis.com`;
+  } else {
+    apiHost = `${location}-aiplatform.googleapis.com`;
+  }
+
   let url;
   let body;
 
   if (publisher === "anthropic") {
     // Anthropic Claude on Vertex AI uses the rawPredict/messages API, not generateContent.
-    url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/${publisher}/models/${modelId}:rawPredict`;
+    url = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/${publisher}/models/${modelId}:rawPredict`;
 
     body = {
       anthropic_version: "vertex-2023-10-16",
@@ -42,7 +67,7 @@ async function callVertexModel({
     };
   } else {
     // Google (Gemini) models use the generateContent API.
-    url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/${publisher}/models/${modelId}:generateContent`;
+    url = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/${publisher}/models/${modelId}:generateContent`;
 
     body = {
       contents: [
@@ -138,7 +163,11 @@ async function callVertexModel({
 //   customPrompt  : string (optional)
 //   provider      : "gemini" | "claude" (optional, defaults to "gemini")
 //   modelVariant  :
-//        - when provider === "gemini": "g25" | "gemini2.5" | "gemini-2.5-pro" | "2.5"
+//        - when provider === "gemini":
+//             "g25" | "gemini2.5" | "gemini-2.5-pro" | "2.5"          -> Gemini 2.5 Pro
+//             "g35-flash" | "flash" | "gemini-3.5-flash" | "3.5-flash" -> Gemini 3.5 Flash
+//             "g31-flash-lite" | "flash-lite" | "gemini-3.1-flash-lite" | "3.1-flash-lite" -> Gemini 3.1 Flash-Lite
+//             (anything else / omitted defaults to Gemini 3 Pro)
 //        - when provider === "claude": "sonnet" | "haiku"
 functions.http("geminiVertexNote", async (req, res) => {
   // CORS headers
@@ -164,9 +193,22 @@ functions.http("geminiVertexNote", async (req, res) => {
     process.env.GEMINI_LOCATION || process.env.VERTEX_LOCATION || "europe-west4";
   const geminiModelId = process.env.GEMINI_MODEL_ID || "gemini-3-pro";
 
-  // Gemini 2.5 Pro (EU, europe-west1) – optional override
+  // Gemini 2.5 Pro (EU single-region, europe-west1) – primary
   const gemini25Location = process.env.GEMINI25_LOCATION || "europe-west1";
   const gemini25ModelId = process.env.GEMINI25_MODEL_ID || "gemini-2.5-pro";
+
+  // Gemini 3.5 Flash (GA) – EU multi-region "eu" (no single-region EU endpoint yet)
+  const gemini35FlashLocation = process.env.GEMINI35_FLASH_LOCATION || "eu";
+  const gemini35FlashModelId = process.env.GEMINI35_FLASH_MODEL_ID || "gemini-3.5-flash";
+
+  // Gemini 3.1 Flash-Lite (GA) – EU multi-region "eu".
+  // Use the GA model ID "gemini-3.1-flash-lite" (the older
+  // "gemini-3.1-flash-lite-preview" is being discontinued 2026-07-09).
+  // If "eu" is unavailable for it, set the location env var to "global" as a
+  // fallback (note: global has no EU residency guarantee).
+  const gemini31FlashLiteLocation = process.env.GEMINI31_FLASH_LITE_LOCATION || "eu";
+  const gemini31FlashLiteModelId =
+    process.env.GEMINI31_FLASH_LITE_MODEL_ID || "gemini-3.1-flash-lite";
 
   // Claude config
   const claudeLocation = process.env.CLAUDE_LOCATION || "europe-west1";
@@ -234,33 +276,51 @@ All headings should be plain text with a colon.
     if (provider === "gemini") {
       usedProvider = "gemini";
 
-      // Default: Gemini 3 Pro in geminiLocation
+      // Normalize the variant key (lowercased above; also strip spaces).
+      const v = modelVariant.replace(/\s+/g, "");
+
+      // Default: Gemini 3 Pro in geminiLocation (unchanged legacy behavior).
       let selectedLocation = geminiLocation;
       let selectedModelId = geminiModelId;
+      // Gemini 3.x supports thinkingConfig.thinkingLevel. Keep "low" for fast,
+      // cost-controlled clinical note generation. (Omitted for 2.5 Pro below.)
+      let generationConfig = { thinkingConfig: { thinkingLevel: "low" } };
 
-      // If caller explicitly wants Gemini 2.5 Pro, switch to that.
       if (
-        modelVariant === "g25" ||
-        modelVariant === "gemini2.5" ||
-        modelVariant === "gemini-2.5-pro" ||
-        modelVariant === "2.5"
+        v === "g31-flash-lite" ||
+        v === "flash-lite" ||
+        v === "flashlite" ||
+        v === "gemini-3.1-flash-lite" ||
+        v === "3.1-flash-lite"
       ) {
+        // Gemini 3.1 Flash-Lite (GA) on the EU multi-region.
+        selectedLocation = gemini31FlashLiteLocation;
+        selectedModelId = gemini31FlashLiteModelId;
+        generationConfig = { thinkingConfig: { thinkingLevel: "low" } };
+      } else if (
+        v === "g35-flash" ||
+        v === "flash" ||
+        v === "gemini-3.5-flash" ||
+        v === "3.5-flash"
+      ) {
+        // Gemini 3.5 Flash (GA) on the EU multi-region.
+        selectedLocation = gemini35FlashLocation;
+        selectedModelId = gemini35FlashModelId;
+        generationConfig = { thinkingConfig: { thinkingLevel: "low" } };
+      } else if (
+        v === "g25" ||
+        v === "gemini2.5" ||
+        v === "gemini-2.5-pro" ||
+        v === "2.5"
+      ) {
+        // Gemini 2.5 Pro on the EU single-region (europe-west1).
         selectedLocation = gemini25Location;
         selectedModelId = gemini25ModelId;
+        // 2.5 Pro: do NOT send a Gemini 3.x-style thinkingConfig.
+        generationConfig = undefined;
       }
 
       usedModelId = selectedModelId;
-
-      // Only some Gemini models support thinkingConfig.
-      // Keep it for the default gemini-3-pro, but REMOVE it for gemini-2.5-pro.
-      let generationConfig = undefined;
-      if (selectedModelId === geminiModelId) {
-        generationConfig = {
-          thinkingConfig: {
-            thinkingLevel: "low",
-          },
-        };
-      }
 
       const result = await callVertexModel({
         projectId,

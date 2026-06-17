@@ -10,11 +10,24 @@ locals {
 
   # Fixed public image (Artifact Registry, Cloud Run compatible)
   # Update this tag when you publish a new backend image.
+  # NOTE (staged rollout): keep this at v1.0.3 for the FIRST commit. After the
+  # v1.0.4 image is published by the release workflow, bump this to :v1.0.4 and commit.
+  # v1.0.4 adds Gemini 3.5 Flash + Gemini 3.1 Flash-Lite (EU multi-region).
   container_image = "europe-west4-docker.pkg.dev/vertex-note-maintainer/public-images/gemini-vertex-backend:v1.0.3"
 
-  # Gemini 2.5 Pro (primary)
+  # Gemini 2.5 Pro (primary) – EU single-region
   gemini25_model_id = "gemini-2.5-pro"
   gemini25_location = "europe-west1"
+
+  # Gemini 3.5 Flash (GA) – EU multi-region (no single-region EU endpoint yet)
+  gemini35_flash_model_id = "gemini-3.5-flash"
+  gemini35_flash_location = "eu"
+
+  # Gemini 3.1 Flash-Lite (GA) – EU multi-region.
+  # Uses the GA model ID; the "-preview" variant is being discontinued 2026-07-09.
+  # If "eu" is unavailable for it, change this to "global" (no EU residency guarantee).
+  gemini31_flash_lite_model_id = "gemini-3.1-flash-lite"
+  gemini31_flash_lite_location = "eu"
 
   # Optional fallback (keep if your backend reads these)
   gemini_model_id = "gemini-3-pro"
@@ -107,6 +120,24 @@ resource "google_cloud_run_v2_service" "svc" {
       env {
         name  = "GEMINI25_LOCATION"
         value = local.gemini25_location
+      }
+
+      env {
+        name  = "GEMINI35_FLASH_MODEL_ID"
+        value = local.gemini35_flash_model_id
+      }
+      env {
+        name  = "GEMINI35_FLASH_LOCATION"
+        value = local.gemini35_flash_location
+      }
+
+      env {
+        name  = "GEMINI31_FLASH_LITE_MODEL_ID"
+        value = local.gemini31_flash_lite_model_id
+      }
+      env {
+        name  = "GEMINI31_FLASH_LITE_LOCATION"
+        value = local.gemini31_flash_lite_location
       }
 
       env {

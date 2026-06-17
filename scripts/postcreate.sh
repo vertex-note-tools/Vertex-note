@@ -21,7 +21,7 @@ echo "Updating Cloud Run service (service account + env vars)..."
 gcloud run services update "${K_SERVICE}" \
   --region "${GOOGLE_CLOUD_REGION}" \
   --service-account "${SA_EMAIL}" \
-  --set-env-vars "GCP_PROJECT_ID=${GOOGLE_CLOUD_PROJECT},GEMINI25_MODEL_ID=gemini-2.5-pro,GEMINI25_LOCATION=europe-west1,VERTEX_LOCATION=europe-west4,GEMINI_MODEL_ID=gemini-3-pro,GEMINI_LOCATION=europe-west4" \
+  --set-env-vars "GCP_PROJECT_ID=${GOOGLE_CLOUD_PROJECT},GEMINI25_MODEL_ID=gemini-2.5-pro,GEMINI25_LOCATION=europe-west1,GEMINI35_FLASH_MODEL_ID=gemini-3.5-flash,GEMINI35_FLASH_LOCATION=eu,GEMINI31_FLASH_LITE_MODEL_ID=gemini-3.1-flash-lite,GEMINI31_FLASH_LITE_LOCATION=eu,VERTEX_LOCATION=europe-west4,GEMINI_MODEL_ID=gemini-3-pro,GEMINI_LOCATION=europe-west4" \
   --quiet
 
 echo ""

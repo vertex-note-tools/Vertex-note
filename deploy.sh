@@ -51,6 +51,10 @@ gcloud run deploy "$SERVICE_NAME" \
   --set-env-vars "GEMINI_LOCATION=europe-west4" \
   --set-env-vars "GEMINI25_MODEL_ID=gemini-2.5-pro" \
   --set-env-vars "GEMINI25_LOCATION=europe-west1" \
+  --set-env-vars "GEMINI35_FLASH_MODEL_ID=gemini-3.5-flash" \
+  --set-env-vars "GEMINI35_FLASH_LOCATION=eu" \
+  --set-env-vars "GEMINI31_FLASH_LITE_MODEL_ID=gemini-3.1-flash-lite" \
+  --set-env-vars "GEMINI31_FLASH_LITE_LOCATION=eu" \
   --set-env-vars "BACKEND_SECRET=$BACKEND_SECRET"
 
 SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(status.url)')"
